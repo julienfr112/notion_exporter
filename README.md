@@ -16,6 +16,8 @@ uv sync
 uv run notion-exporter convert path/to/notion-export.zip out.sqlite
 ```
 
+…or, equivalently, `uv run python -m notion_exporter convert …`.
+
 Output:
 
 - `out.sqlite` — clean queryable database (schema below).
@@ -35,12 +37,20 @@ Every page and every block (paragraph, heading, todo, callout, image, …) is a 
 |---|---|---|
 | `uuid` | TEXT PK | hyphenated UUID. Pages use Notion's own UUID; sub-page blocks use `uuid5(NAMESPACE_DISPATCH, "{page_uuid}/{path}/{content_hash}")` for deterministic re-imports. |
 | `parent` | TEXT | parent uuid, NULL for workspace roots |
-| `kind` | TEXT | `page`, `paragraph`, `heading_1..3`, `todo`, `bulleted`, `numbered`, `quote`, `callout`, `code`, `image`, `database`, `divider`, … |
+| `kind` | TEXT | `page`, `paragraph`, `heading_1..3`, `todo`, `bulleted`, `numbered`, `quote`, `callout`, `toggle`, `code`, `image`, `file`, `bookmark`, `page_link`, `table`, `database`, `db_row`, `divider` |
 | `pos` | INTEGER | ordering within parent |
 | `title` | TEXT | hoisted for `kind='page'` and `kind='database'` |
 | `text` | TEXT | hoisted plain-text concat for text-bearing blocks, FTS-friendly |
 | `page_uuid` | TEXT | denormalized ancestor page for `WHERE page_uuid = ?` queries without recursive CTE |
 | `json` | TEXT | full payload as JSON. Schema varies by `kind` — see `notion_exporter/parsers/v2024_md_csv.py` for the per-kind shapes. |
+
+Common `extra` fields on `kv.json`:
+- `image` / `file` / `bookmark` / `page_link`: `src` or `href` (original markdown URL), `alt`, `attachment_uuid` (set when the relative URL resolves to a row in `attachment`), `target_page_uuid` (set when the URL points at another exported page).
+- `paragraph`: `links` — list of `{label, href, target_page_uuid?, attachment_uuid?}` recovered from inline `[label](href)` syntax.
+- `toggle` / `callout`: `title` carries the summary text; children blocks appear as separate `kv` rows with `parent = <container.uuid>`.
+- `table`: `headers` (list[str]) + `rows` (list[list[str]]).
+- `todo`: `checked` (bool).
+- `code`: `language`.
 
 Indexed on `(parent)` and `(kind, page_uuid)`.
 
@@ -50,10 +60,10 @@ One row per Notion database. Each row names the matching `data_*` table that hol
 
 | column | type | notes |
 |---|---|---|
-| `uuid` | TEXT PK | same as the `kind='database'` row in `kv` |
+| `uuid` | TEXT PK | same as the `kind='database'` row in `kv` (enforced via `FOREIGN KEY`) |
 | `name` | TEXT | human-readable database name |
-| `table_name` | TEXT | name of the matching `data_*` table |
-| `schema_json` | TEXT | column types, select options, relation targets — JSON |
+| `table_name` | TEXT | name of the matching `data_*` table. Two Notion databases with the same name get distinct tables (the second gets a `_<uuid8>` suffix). |
+| `schema_json` | TEXT | per-column `name`, `sqlite_type`, `notion_type` (`text`, `number`, `checkbox`, `select`, `multi_select`) — JSON |
 
 ### `data_<sanitized_name>` — per-database row tables
 

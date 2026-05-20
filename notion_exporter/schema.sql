@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS notion_database (
     uuid         TEXT PRIMARY KEY,
     name         TEXT NOT NULL,
     table_name   TEXT NOT NULL UNIQUE,
-    schema_json  TEXT NOT NULL
+    schema_json  TEXT NOT NULL,
+    FOREIGN KEY (uuid) REFERENCES kv(uuid)
 );
 
 CREATE TABLE IF NOT EXISTS attachment (
