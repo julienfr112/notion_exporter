@@ -1,0 +1,25 @@
+[project]
+name = "notion-exporter"
+version = "0.1.0"
+description = "Convert a Notion .zip export into a portable SQLite database + sidecar attachments"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+dependencies = [
+    "rich>=13.0",
+]
+
+[project.scripts]
+notion-exporter = "notion_exporter.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["notion_exporter"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
