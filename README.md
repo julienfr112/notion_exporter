@@ -2,7 +2,7 @@
 
 Convert a Notion `.zip` export into a portable SQLite database (+ sidecar attachments directory). The output is consumable by [Dispatch](https://dispatch.ovh) and by any other project that wants Notion content in a clean, queryable shape — no Notion API, no rate limits, no auth.
 
-> **Status: alpha, single-consumer.** This currently lives as a subdirectory inside the Dispatch monorepo. It will graduate to its own git repository once there is a second consumer. The code is MIT-licensed from day one so that graduation is friction-free.
+> **Status: alpha, single-consumer.** The first consumer is [Dispatch](https://dispatch.ovh), which embeds this repository as a git submodule and runs the CLI against Notion exports. Apache-2.0 licensed; PRs and issues welcome.
 
 ## Install
 
